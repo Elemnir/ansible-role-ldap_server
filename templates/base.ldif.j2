@@ -1,0 +1,14 @@
+dn: {{ ldap_server_dn }}
+dc: {{ ldap_server_dc }}
+objectClass: top
+objectClass: domain
+
+dn: ou=People,{{ ldap_server_dn }}
+ou: People
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=Group,{{ ldap_server_dn }}
+ou: Group
+objectClass: top
+objectClass: organizationalUnit

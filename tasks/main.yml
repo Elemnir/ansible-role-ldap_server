@@ -1,0 +1,134 @@
+---
+
+- become: True
+  block:
+
+  - name: Install LDAP Packages
+    yum:
+      name: [
+        "openldap", "openldap-clients", 
+        "openldap-servers", "migrationtools"
+      ]
+      state: latest
+
+  - name: Assert that the password is set
+    assert:
+      that:
+       - "ldap_server_password != ''"
+
+  - name: Hash the password
+    shell: "slappasswd -n -h '{SHA}' -s {{ ldap_server_password }}"
+    check_mode: no
+    changed_when: False
+    register: ldap_server_slappasswd
+
+  - name: Make the result useful
+    set_fact:
+      ldap_server_pwhash: "{{ ldap_server_slappasswd.stdout }}"
+    check_mode: no
+
+  - name: Set the ldap password
+    copy:
+      content: "{{ ldap_server_pwhash }}"
+      dest: "/etc/openldap/passwd"
+      owner: root
+      mode: 0700
+
+  - name: Copy the X509 certs
+    copy:
+      src: "{{ item.src }}"
+      dest: "/etc/openldap/certs/{{ item.dest }}"
+      owner: ldap
+      group: ldap
+      mode: "{{ item.mode }}"
+    loop:
+      - { src: "{{ ldap_server_cert_path }}", dest: "cert.pem", mode: "0755" }
+      - { src: "{{ ldap_server_priv_path }}", dest: "priv.pem", mode: "0600" }
+
+  - name: Write the DB_CONFIG
+    template:
+      src: "DB_CONFIG.j2"
+      dest: "/var/lib/ldap/DB_CONFIG"
+      owner: ldap
+      group: ldap
+    register: ldap_server_db_config_result
+
+  - name: Generate the DB files
+    shell: slaptest
+    ignore_errors: True
+    when: ldap_server_db_config_result is changed
+
+  - name: Make sure the LDAP user owns its directory
+    file:
+      dest: /var/lib/ldap
+      state: directory
+      owner: ldap
+      group: ldap
+      recurse: yes
+  
+  - name: Set slapd_t to permissive in SELinux
+    selinux_permissive:
+      name: slapd_t
+      permissive: True
+
+  - name: Start and Enable the LDAP Server
+    systemd:
+      name: slapd.service
+      state: started
+      enabled: True
+
+  - name: Make sure the schema list file exists
+    file:
+      path: /etc/openldap/.loaded_schemas
+      state: touch
+    changed_when: False
+
+  - name: Figure out which schemas are loaded
+    slurp:
+      src: /etc/openldap/.loaded_schemas
+    register: ldap_server_loaded_schemas
+
+  - debug:
+      msg: "{{ ldap_server_loaded_schemas['content'].decode('base64').split() }}"
+
+  - name: Load any unloaded schemas
+    shell: ldapadd -Y EXTERNAL -H ldapi:/// -D "cn=config" -f {{ item }}
+    when: item not in ldap_server_loaded_schemas['content'].decode('base64').split()
+    loop: "{{ ldap_server_schemas }}"
+    register: ldap_server_new_schemas
+
+  - name: Write the new schemas
+    lineinfile:
+      line: "{{ item.item }}"
+      path: /etc/openldap/.loaded_schemas
+    loop: "{{ ldap_server_new_schemas.results }}"
+
+  - name: Copy the config ldif
+    template:
+      src: config.ldif.j2
+      dest: /etc/openldap/config.ldif
+    register: ldap_server_config_result
+
+  - name: Load the config ldif
+    shell: ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/openldap/config.ldif
+    when: ldap_server_config_result is changed
+  
+  - name: Copy the base ldif
+    template:
+      src: base.ldif.j2
+      dest: /etc/openldap/base.ldif
+    register: ldap_server_base_result
+
+  - name: Load the base ldif
+    shell: > 
+      ldapadd -x -w {{ ldap_server_password }} -D cn=Manager,{{ ldap_server_dn }}
+      -f /etc/openldap/base.ldif
+    when: ldap_server_base_result is changed
+
+  - name: Add the service to firewalld
+    firewalld:
+      service: "ldap"
+      state: "enabled"
+      zone: "{{ ldap_server_firewalld_zone }}"
+      permanent: True
+      immediate: True
