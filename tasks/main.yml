@@ -88,9 +88,6 @@
       src: /etc/openldap/.loaded_schemas
     register: ldap_server_loaded_schemas
 
-  - debug:
-      msg: "{{ ldap_server_loaded_schemas['content'].decode('base64').split() }}"
-
   - name: Load any unloaded schemas
     shell: ldapadd -Y EXTERNAL -H ldapi:/// -D "cn=config" -f {{ item }}
     when: item not in ldap_server_loaded_schemas['content'].decode('base64').split()
