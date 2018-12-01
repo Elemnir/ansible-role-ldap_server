@@ -9,7 +9,7 @@
         "openldap", "openldap-clients", 
         "openldap-servers", "migrationtools"
       ]
-      state: latest
+      state: installed
 
   - name: Assert that the password is set
     assert:
@@ -124,8 +124,11 @@
 
   - name: Add the service to firewalld
     firewalld:
-      service: "ldap"
+      service: "{{ item }}"
       state: "enabled"
       zone: "{{ ldap_server_firewalld_zone }}"
       permanent: True
       immediate: True
+    loop:
+      - ldap
+      - ldaps
