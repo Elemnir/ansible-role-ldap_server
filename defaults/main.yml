@@ -6,9 +6,9 @@ ldap_server_dc: "example"
 
 ldap_server_password: ""
 
-ldap_server_cert_path: "keys/ldap_server/cert.pem"
+ldap_server_cert_path: "../keys/ldap_server/cert.pem"
 
-ldap_server_priv_path: "keys/ldap_server/priv.pem"
+ldap_server_priv_path: "../keys/ldap_server/priv.pem"
 
 ldap_server_schemas:
     - /etc/openldap/schema/cosine.ldif
