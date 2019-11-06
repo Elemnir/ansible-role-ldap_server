@@ -33,6 +33,13 @@
       dest: "/etc/openldap/passwd"
       owner: root
       mode: 0700
+    notify: Restart slapd
+
+  - name: Render the slapd.conf
+    template:
+      src: slapd.conf.j2
+      dest: /etc/openldap/slapd.conf
+    notify: Restart slapd
 
   - name: Copy the X509 certs
     copy:
@@ -44,6 +51,7 @@
     loop:
       - { src: "{{ ldap_server_cert_path }}", dest: "cert.pem", mode: "0755" }
       - { src: "{{ ldap_server_priv_path }}", dest: "priv.pem", mode: "0600" }
+    notify: Restart slapd
 
   - name: Write the DB_CONFIG
     template:
@@ -132,3 +140,42 @@
     loop:
       - ldap
       - ldaps
+
+
+  - when: ldap_server_sasl_enabled
+    block:
+
+    - name: Install cyrus-sasl
+      package:
+        name: cyrus-sasl
+        state: installed
+
+    - name: Render the config file
+      template:
+        src: saslauthd.conf.j2
+        dest: /etc/saslauthd.conf.j2
+        owner: root
+        group: root
+        mode: 600
+      notify: Restart saslauthd
+
+    - name: Write the sysconfig file
+      copy:
+        dest: /etc/sysconfig/saslauthd
+        content: |
+          SOCKETDIR=/run/saslauthd
+          MECH=ldap
+          FLAGS=
+
+    - name: Write the SASL2 config
+      copy:
+        dest: /etc/sasl2/slapd.conf
+        content: |
+          pwcheck_method: saslauthd
+          saslauthd_path: /var/run/saslauthd/mux
+
+    - name: Start and enable the service
+      service:
+        name: saslauthd.service
+        state: started
+        enabled: True

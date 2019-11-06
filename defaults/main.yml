@@ -15,3 +15,10 @@ ldap_server_schemas:
     - /etc/openldap/schema/nis.ldif
 
 ldap_server_firewalld_zone: "public"
+
+ldap_server_sasl_enabled: False
+ldap_server_sasl_servers: ""
+ldap_server_sasl_search_base: ""
+ldap_server_sasl_filter: "uid=%U"
+ldap_server_sasl_bind_dn: ""
+ldap_server_sasl_password: ""

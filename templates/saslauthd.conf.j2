@@ -1,0 +1,13 @@
+ldap_servers: {{ ldap_server_sasl_servers }}
+ldap_search_base: {{ ldap_server_sasl_search_base }}
+ldap_timeout: 10
+ldap_filter: {{ ldap_server_sasl_filter }}
+ldap_bind_dn: {{ ldap_server_sasl_bind_dn }}
+ldap_password: {{ ldap_server_sasl_password }}
+ldap_deref: never
+ldap_restart: yes
+ldap_scope: sub
+ldap_use_sasl: no
+ldap_start_tls: yes
+ldap_version: 3
+ldap_auth_method: bind
