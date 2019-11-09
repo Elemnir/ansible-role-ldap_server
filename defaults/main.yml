@@ -13,6 +13,7 @@ ldap_server_priv_path: "../keys/ldap_server/priv.pem"
 ldap_server_schemas:
     - /etc/openldap/schema/cosine.ldif
     - /etc/openldap/schema/nis.ldif
+    - /etc/openldap/schema/inetorgperson.ldif
 
 ldap_server_firewalld_zone: "public"
 
