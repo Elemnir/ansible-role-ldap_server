@@ -41,6 +41,18 @@
       dest: /etc/openldap/slapd.conf
     notify: Restart slapd
 
+  - name: Make the service.d directory
+    file:
+      path: "/etc/systemd/system/slapd.service.d"
+      state: directory
+
+  - name: Increase the maximum number of open files
+    copy:
+      dest: "/etc/systemd/system/slapd.service.d/limitnofile.conf"
+      content: |
+        [Service]
+        LimitNOFILE=infinity
+
   - name: Copy the X509 certs
     copy:
       src: "{{ item.src }}"
@@ -84,6 +96,7 @@
       name: slapd.service
       state: started
       enabled: True
+      daemon_reload: True
 
   - name: Make sure the schema list file exists
     file:
