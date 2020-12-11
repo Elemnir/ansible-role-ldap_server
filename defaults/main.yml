@@ -6,6 +6,8 @@ ldap_server_dc: "example"
 
 ldap_server_password: ""
 
+ldap_server_subj: ""
+
 ldap_server_cert_path: "../keys/ldap_server/cert.pem"
 
 ldap_server_priv_path: "../keys/ldap_server/priv.pem"
@@ -16,6 +18,8 @@ ldap_server_schemas:
     - /etc/openldap/schema/inetorgperson.ldif
 
 ldap_server_firewalld_zone: "public"
+
+ldap_server_renew_period: 365
 
 ldap_server_sasl_enabled: False
 ldap_server_sasl_servers: ""

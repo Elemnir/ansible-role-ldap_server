@@ -1,5 +1,27 @@
 ---
 
+- when: '"ldap_server_renew_cert" in ansible_run_tags' 
+  tags: ['never', 'ldap_server_renew_cert']
+  become: True
+  block:
+  
+  - name: Generate the new certificate
+    run_once: True
+    shell: > 
+        openssl req -x509 
+        -key /etc/openldap/certs/priv.pem 
+        -subj {{ ldap_server_subj }}
+        -out /var/tmp/newcert.pem 
+        -days {{ ldap_server_renew_period }}
+
+  - name: Pull the new certificate
+    run_once: True
+    fetch:
+      src: "/var/tmp/newcert.pem"
+      dest: "{{ ldap_server_cert_path }}"
+      flat: True
+
+
 - become: True
   block:
 
