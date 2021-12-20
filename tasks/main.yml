@@ -85,6 +85,8 @@
     loop:
       - { src: "{{ ldap_server_cert_path }}", dest: "cert.pem", mode: "0755" }
       - { src: "{{ ldap_server_priv_path }}", dest: "priv.pem", mode: "0600" }
+    tags: 
+      - ldap_server_renew_cert
     notify: Restart slapd
 
   - name: Write the DB_CONFIG
